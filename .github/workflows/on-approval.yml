@@ -1,0 +1,63 @@
+name: On Approval
+on:
+  workflow_dispatch:
+    inputs:
+      youtube_id:
+        required: true
+        type: string
+      selected_clip_rank:
+        required: true
+        type: string
+      edited_caption:
+        required: true
+        type: string
+      edited_hashtags:
+        required: true
+        type: string
+      action:
+        required: true
+        type: string  # "approve" or "reject"
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Process approval/rejection
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+        run: |
+          if [ "${{ github.event.inputs.action }}" = "approve" ]; then
+            python -m pipeline.run --approve \
+              "${{ github.event.inputs.youtube_id }}" \
+              "${{ github.event.inputs.selected_clip_rank }}" \
+              "${{ github.event.inputs.edited_caption }}" \
+              "${{ github.event.inputs.edited_hashtags }}"
+          else
+            python -m pipeline.run --reject "${{ github.event.inputs.youtube_id }}"
+          fi
+
+      - name: Commit queue updates
+        run: |
+          git config user.name "thechoirsource-bot"
+          git config user.email "bot@thechoirsource.com"
+          git pull --rebase origin main
+          git add queue/
+          git diff --cached --quiet || git commit -m "queue: ${{ github.event.inputs.action }} ${{ github.event.inputs.youtube_id }}"
+          git push

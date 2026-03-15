@@ -1,0 +1,69 @@
+{
+  "search_response": {
+    "kind": "youtube#searchListResponse",
+    "etag": "test_etag",
+    "nextPageToken": "CAUQAA",
+    "regionCode": "GB",
+    "pageInfo": {
+      "totalResults": 1000000,
+      "resultsPerPage": 10
+    },
+    "items": [
+      {
+        "kind": "youtube#searchResult",
+        "etag": "item_etag_1",
+        "id": {
+          "kind": "youtube#video",
+          "videoId": "mock_vid_001"
+        },
+        "snippet": {
+          "publishedAt": "2026-03-10T14:00:00Z",
+          "channelId": "UC_mock_channel_1",
+          "title": "Allegri - Miserere mei, Deus | Choir of King's College, Cambridge",
+          "description": "Live performance from King's College Chapel.",
+          "channelTitle": "King's College Cambridge",
+          "liveBroadcastContent": "none"
+        }
+      },
+      {
+        "kind": "youtube#searchResult",
+        "etag": "item_etag_2",
+        "id": {
+          "kind": "youtube#video",
+          "videoId": "mock_vid_002"
+        },
+        "snippet": {
+          "publishedAt": "2026-03-08T10:00:00Z",
+          "channelId": "UC_mock_channel_2",
+          "title": "The Sixteen: Palestrina — Sicut Cervus",
+          "description": "Harry Christophers conducts The Sixteen.",
+          "channelTitle": "The Sixteen",
+          "liveBroadcastContent": "none"
+        }
+      }
+    ]
+  },
+  "video_details_response": {
+    "kind": "youtube#videoListResponse",
+    "items": [
+      {
+        "id": "mock_vid_001",
+        "contentDetails": {
+          "duration": "PT8M30S"
+        },
+        "statistics": {
+          "viewCount": "15420"
+        }
+      },
+      {
+        "id": "mock_vid_002",
+        "contentDetails": {
+          "duration": "PT5M15S"
+        },
+        "statistics": {
+          "viewCount": "8930"
+        }
+      }
+    ]
+  }
+}

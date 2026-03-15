@@ -1,0 +1,57 @@
+name: Weekly Pipeline
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Monday 6am UTC
+  workflow_dispatch:
+    inputs:
+      manual_urls:
+        description: 'Comma-separated YouTube URLs to add manually'
+        required: false
+        type: string
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libsndfile1
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.manual_urls }}" ]; then
+            ARGS="--manual-urls ${{ github.event.inputs.manual_urls }}"
+          fi
+          python -m pipeline.run $ARGS
+
+      - name: Commit queue updates
+        run: |
+          git config user.name "thechoirsource-bot"
+          git config user.email "bot@thechoirsource.com"
+          git pull --rebase origin main
+          git add queue/
+          git diff --cached --quiet || git commit -m "pipeline: queue $(date +%Y-%m-%d)"
+          git push

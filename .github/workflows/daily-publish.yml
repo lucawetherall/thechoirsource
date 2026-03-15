@@ -1,0 +1,44 @@
+name: Daily Publish
+on:
+  schedule:
+    - cron: '0 17 * * *'  # 5pm UTC daily (buffer before 6-8pm UK posting window)
+  workflow_dispatch:  # Manual trigger for testing
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Publish due clips
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_IG_USER_ID: ${{ secrets.META_IG_USER_ID }}
+          META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+          TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+        run: python -m pipeline.run --publish
+
+      - name: Commit queue updates
+        run: |
+          git config user.name "thechoirsource-bot"
+          git config user.email "bot@thechoirsource.com"
+          git pull --rebase origin main
+          git add queue/
+          git diff --cached --quiet || git commit -m "publish: $(date +%Y-%m-%d)"
+          git push
