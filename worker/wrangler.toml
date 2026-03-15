@@ -1,0 +1,17 @@
+name = "thechoirsource-worker"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+# Environment variables MUST be set in the Cloudflare dashboard, not here.
+# Go to: Workers & Pages → thechoirsource-worker → Settings → Variables
+# Add these as encrypted secrets:
+#   DASHBOARD_SECRET  — shared secret with the dashboard (generate a random string)
+#   GH_PAT_TOKEN      — GitHub PAT with actions:write permission
+#   GH_OWNER          — GitHub username or org name
+#   GH_REPO           — Repository name (e.g. "thechoirsource")
+#
+# DO NOT set real values here — this file is committed to the public repo.
+
+[vars]
+# Placeholder comment only — no sensitive values stored here
+WORKER_VERSION = "1.0.0"

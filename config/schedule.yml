@@ -1,0 +1,8 @@
+posting_window_start_hour: 18
+posting_window_end_hour: 20
+timezone: "Europe/London"
+posts_per_day: 1
+platforms:
+  - instagram_reels
+  - facebook_reels
+  - tiktok
