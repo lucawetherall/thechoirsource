@@ -42,22 +42,30 @@ jobs:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          INPUT_ACTION: ${{ github.event.inputs.action }}
+          INPUT_YT_ID: ${{ github.event.inputs.youtube_id }}
+          INPUT_CLIP_RANK: ${{ github.event.inputs.selected_clip_rank }}
+          INPUT_CAPTION: ${{ github.event.inputs.edited_caption }}
+          INPUT_HASHTAGS: ${{ github.event.inputs.edited_hashtags }}
         run: |
-          if [ "${{ github.event.inputs.action }}" = "approve" ]; then
+          if [ "$INPUT_ACTION" = "approve" ]; then
             python -m pipeline.run --approve \
-              "${{ github.event.inputs.youtube_id }}" \
-              "${{ github.event.inputs.selected_clip_rank }}" \
-              "${{ github.event.inputs.edited_caption }}" \
-              "${{ github.event.inputs.edited_hashtags }}"
+              "$INPUT_YT_ID" \
+              "$INPUT_CLIP_RANK" \
+              "$INPUT_CAPTION" \
+              "$INPUT_HASHTAGS"
           else
-            python -m pipeline.run --reject "${{ github.event.inputs.youtube_id }}"
+            python -m pipeline.run --reject "$INPUT_YT_ID"
           fi
 
       - name: Commit queue updates
+        env:
+          INPUT_ACTION: ${{ github.event.inputs.action }}
+          INPUT_YT_ID: ${{ github.event.inputs.youtube_id }}
         run: |
           git config user.name "thechoirsource-bot"
           git config user.email "bot@thechoirsource.com"
           git pull --rebase origin main
           git add queue/
-          git diff --cached --quiet || git commit -m "queue: ${{ github.event.inputs.action }} ${{ github.event.inputs.youtube_id }}"
+          git diff --cached --quiet || git commit -m "queue: ${INPUT_ACTION} ${INPUT_YT_ID}"
           git push

@@ -326,7 +326,7 @@ async function handleAction(btn) {
   }
 
   try {
-    const resp = await fetch(state.settings.workerUrl + (action === 'approve' ? '/approve' : '/reject'), {
+    const resp = await fetch(state.settings.workerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

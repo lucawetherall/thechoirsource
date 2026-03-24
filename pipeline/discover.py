@@ -95,13 +95,20 @@ def _build_item_from_api(video_data: dict, channel_name: str, source: str) -> di
 
 
 def _fetch_channel_videos(youtube, channel_id: str, channel_name: str, published_after: str) -> list:
-    """Fetch recent uploads from a channel's uploads playlist."""
+    """Fetch recent uploads from a channel's uploads playlist.
+    Supports both UC... channel IDs and @handle format."""
     try:
         # Step 1: get the uploads playlist ID
-        ch_resp = youtube.channels().list(
-            part="contentDetails",
-            id=channel_id,
-        ).execute()
+        if channel_id.startswith("@"):
+            ch_resp = youtube.channels().list(
+                part="contentDetails",
+                forHandle=channel_id,
+            ).execute()
+        else:
+            ch_resp = youtube.channels().list(
+                part="contentDetails",
+                id=channel_id,
+            ).execute()
         items = ch_resp.get("items", [])
         if not items:
             logger.warning("No channel found for ID: %s", channel_id)

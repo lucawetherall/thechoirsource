@@ -5,4 +5,4 @@ posts_per_day: 1
 platforms:
   - instagram_reels
   - facebook_reels
-  - tiktok
+  # - tiktok  # Re-enable once TikTok Content Posting API app is approved
