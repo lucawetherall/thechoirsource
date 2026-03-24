@@ -158,15 +158,17 @@ class MockYouTubeAPI:
 class MockDownloader:
     """
     Generates a synthetic test video using FFmpeg's built-in signal generators.
-    The video has varied audio dynamics so the audio analysis algorithm can find
-    interesting segments:
+    Falls back to generating a minimal valid MP4 with WAV audio using pure Python
+    if FFmpeg is not available.
 
-      0–30s:  quiet sine wave (low amplitude)
-      30–35s: sudden loud burst (multiple frequencies, high amplitude)
-      35–60s: medium amplitude with gradual crescendo
-      60–65s: silence
-      65–90s: another loud, complex section
-      90–120s: quiet fade out
+    FFmpeg version has varied audio dynamics so the audio analysis algorithm can
+    find interesting segments:
+      0-30s:  quiet sine wave (low amplitude)
+      30-35s: sudden loud burst (multiple frequencies, high amplitude)
+      35-60s: medium amplitude with gradual crescendo
+      60-65s: silence
+      65-90s: another loud, complex section
+      90-120s: quiet fade out
     """
 
     def generate(self, youtube_id: str, output_dir: str) -> dict:
@@ -177,33 +179,105 @@ class MockDownloader:
             logger.info("Mock video already exists at %s", output_path)
             return {"youtube_id": youtube_id, "local_path": output_path, "success": True}
 
+        # Try FFmpeg first (produces high-quality test videos with dynamic audio)
+        if shutil.which("ffmpeg"):
+            result = self._generate_with_ffmpeg(youtube_id, output_path)
+            if result["success"]:
+                return result
+            logger.warning("FFmpeg generation failed, falling back to pure-Python generator")
+
+        # Fallback: generate a minimal WAV file with dynamic audio using numpy/scipy.
+        # The pipeline's audio_analysis module works on extracted WAV audio, so this
+        # is sufficient for testing even though it won't have a video track.
+        return self._generate_fallback(youtube_id, output_path, output_dir)
+
+    def _generate_fallback(self, youtube_id: str, output_path: str, output_dir: str) -> dict:
+        """Generate a minimal MP4-like file with a WAV audio track using pure Python."""
+        import math
+        import struct
+        import wave
+
+        logger.info("Generating fallback test video (pure Python) for %s", youtube_id)
+
+        # Generate a 120-second WAV with dynamic contrast sections
+        sample_rate = 22050
+        duration = 120
+        n_samples = sample_rate * duration
+        samples = []
+
+        for i in range(n_samples):
+            t = i / sample_rate
+            # Section-based amplitude to create dynamic contrast
+            if t < 30:
+                amp = 0.05  # quiet
+            elif t < 35:
+                amp = 0.8  # loud burst
+            elif t < 60:
+                amp = 0.1 + (t - 35) / 25 * 0.4  # crescendo
+            elif t < 65:
+                amp = 0.02  # near silence
+            elif t < 90:
+                amp = 0.7  # second loud section
+            else:
+                amp = max(0.02, 0.3 - (t - 90) / 30 * 0.28)  # fade out
+
+            # Mix sine waves for richer sound in loud sections
+            val = amp * math.sin(2 * math.pi * 440 * t)
+            if amp > 0.3:
+                val += amp * 0.5 * math.sin(2 * math.pi * 880 * t)
+                val += amp * 0.3 * math.sin(2 * math.pi * 1320 * t)
+
+            samples.append(max(-1.0, min(1.0, val)))
+
+        # Write WAV file
+        wav_path = os.path.join(output_dir, f"{youtube_id}.wav")
+        with wave.open(wav_path, "w") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)  # 16-bit
+            wf.setframerate(sample_rate)
+            for s in samples:
+                wf.writeframes(struct.pack("<h", int(s * 32767)))
+
+        # If ffmpeg is available, wrap in a proper MP4 container
+        if shutil.which("ffmpeg"):
+            cmd = [
+                "ffmpeg", "-y",
+                "-f", "lavfi", "-i", "color=c=blue:size=320x180:rate=1:duration=120",
+                "-i", wav_path,
+                "-c:v", "libx264", "-preset", "ultrafast", "-crf", "51",
+                "-c:a", "aac", "-b:a", "32k",
+                "-pix_fmt", "yuv420p", "-shortest",
+                output_path,
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode == 0 and os.path.exists(output_path):
+                os.unlink(wav_path)
+                logger.info("Fallback video generated: %s", output_path)
+                return {"youtube_id": youtube_id, "local_path": output_path, "success": True}
+
+        # No ffmpeg at all — use the WAV directly as the "video" file.
+        # The pipeline's audio_analysis extracts audio via ffmpeg anyway, but
+        # the mock can at least provide a valid audio file for unit tests.
+        # Rename to .mp4 extension so file discovery works.
+        if os.path.exists(wav_path):
+            shutil.move(wav_path, output_path)
+            logger.info("Fallback WAV-as-MP4 generated: %s (no ffmpeg available)", output_path)
+            return {"youtube_id": youtube_id, "local_path": output_path, "success": True}
+
+        return {
+            "youtube_id": youtube_id,
+            "local_path": None,
+            "success": False,
+            "error_message": "Failed to generate fallback test file",
+        }
+
+    def _generate_with_ffmpeg(self, youtube_id: str, output_path: str) -> dict:
+        """Generate a full test video with dynamic audio using FFmpeg."""
         logger.info("Generating synthetic test video at %s", output_path)
 
-        # Build a complex audio using FFmpeg's amix + asine sources with volume envelopes.
-        # We use the sine lavfi source with volume filter to create dynamic contrast.
-        # Total duration: 120 seconds.
-        audio_filter = (
-            # Segment 0–30s: quiet sine at 440 Hz (amplitude ~0.05 → volume 0.05)
-            "sine=frequency=440:duration=120:sample_rate=22050[base];"
-            # Loud burst at 30–35s: mix sine waves at 440+880+1320 Hz
-            "sine=frequency=440:duration=5:sample_rate=22050[b1];"
-            "sine=frequency=880:duration=5:sample_rate=22050[b2];"
-            "sine=frequency=1320:duration=5:sample_rate=22050[b3];"
-            "[b1][b2][b3]amix=inputs=3[burst];"
-            # Second loud section at 65–90s
-            "sine=frequency=330:duration=25:sample_rate=22050[s1];"
-            "sine=frequency=660:duration=25:sample_rate=22050[s2];"
-            "sine=frequency=990:duration=25:sample_rate=22050[s3];"
-            "[s1][s2][s3]amix=inputs=3[section2];"
-        )
-
-        # Simpler approach: generate piece-by-piece and concatenate
-        # Use a single ffmpeg command with complex filtergraph
         cmd = [
             "ffmpeg", "-y",
-            # Colour bars video source (1920x1080, 120 seconds)
             "-f", "lavfi", "-i", "color=c=blue:size=1920x1080:rate=25:duration=120",
-            # Sine wave sources for audio composition
             "-f", "lavfi", "-i", "sine=frequency=440:duration=120:sample_rate=22050",
             "-f", "lavfi", "-i", "sine=frequency=440:duration=120:sample_rate=22050",
             "-f", "lavfi", "-i", "sine=frequency=880:duration=120:sample_rate=22050",
@@ -213,21 +287,15 @@ class MockDownloader:
             "-f", "lavfi", "-i", "sine=frequency=990:duration=120:sample_rate=22050",
             "-filter_complex",
             (
-                # Base quiet layer (always present, low amplitude)
                 "[1]volume=0.05[quiet];"
-                # Burst layer (loud, 30–35s only → zero elsewhere via volume with eval)
                 "[2]volume=enable='between(t,30,35)':volume=0.8:eval=frame[burst_a];"
                 "[3]volume=enable='between(t,30,35)':volume=0.8:eval=frame[burst_b];"
                 "[4]volume=enable='between(t,30,35)':volume=0.8:eval=frame[burst_c];"
-                # Crescendo layer (35–60s, ramping from 0.1 to 0.5)
                 "[1]volume=enable='between(t,35,60)':volume='0.1+(t-35)/25*0.4':eval=frame[cresc];"
-                # Second loud section (65–90s)
                 "[5]volume=enable='between(t,65,90)':volume=0.7:eval=frame[loud2_a];"
                 "[6]volume=enable='between(t,65,90)':volume=0.7:eval=frame[loud2_b];"
                 "[7]volume=enable='between(t,65,90)':volume=0.7:eval=frame[loud2_c];"
-                # Fade out (90–120s, 0.3 → 0.02)
                 "[1]volume=enable='between(t,90,120)':volume='0.3-(t-90)/30*0.28':eval=frame[fadeout];"
-                # Mix everything
                 "[quiet][burst_a][burst_b][burst_c][cresc][loud2_a][loud2_b][loud2_c][fadeout]"
                 "amix=inputs=9:normalize=0[audio]"
             ),

@@ -62,7 +62,7 @@ def test_publish_clip_all_platforms():
     result = publish_clip(approved_item, config)
     assert result["youtube_id"] == "test_vid"
     assert isinstance(result["results"], list)
-    assert len(result["results"]) == 3  # instagram, facebook, tiktok
+    assert len(result["results"]) == len(config.platforms)
     assert result["all_success"] is True
 
 

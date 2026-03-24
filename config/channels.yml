@@ -1,8 +1,6 @@
 # Curated list of high-quality professional choir YouTube channels.
-# IMPORTANT: Channel IDs marked PLACEHOLDER must be verified and replaced.
-# YouTube channel IDs are NOT channel handles — they are "UC..." strings.
-# Find them via: https://www.youtube.com/@ChannelName/about (view page source, search "channelId")
-# or via the YouTube Data API: channels.list?forHandle=@ChannelHandle&part=id
+# Supports both UC... channel IDs and @handle format.
+# The pipeline resolves @handles via the YouTube Data API at runtime.
 channels:
   - id: "UC9qIt1B9hELcfJdOMUmBLTQ"
     name: "King's College Cambridge"
@@ -12,42 +10,38 @@ channels:
     name: "St John's College Cambridge"
     note: "Choir of St John's College, Cambridge"
 
-  - id: "PLACEHOLDER_CHANNEL_ID_the_sixteen"
+  - id: "@16choir"
     name: "The Sixteen"
-    note: "The Sixteen conducted by Harry Christophers — PLACEHOLDER: verify channel ID"
+    note: "The Sixteen conducted by Harry Christophers"
 
-  - id: "PLACEHOLDER_CHANNEL_ID_tenebrae"
+  - id: "UCl-WbRCwODSd2BRQSxJcq2g"
     name: "Tenebrae Choir"
-    note: "Tenebrae conducted by Nigel Short — PLACEHOLDER: verify channel ID"
+    note: "Tenebrae conducted by Nigel Short"
 
   - id: "UCOchT7ZJ4TXe3stdLW1rofA"
     name: "Westminster Abbey"
     note: "Westminster Abbey official channel including choir performances"
 
-  - id: "PLACEHOLDER_CHANNEL_ID_westminster_cathedral"
+  - id: "UCzfVnVRlUxQzTWx7BZcG5Zg"
     name: "Westminster Cathedral Choir"
-    note: "Westminster Cathedral Choir — PLACEHOLDER: verify channel ID"
+    note: "Westminster Cathedral Choir"
 
   - id: "UCpbz4KBCNrKyoDNBDGQoAbg"
     name: "VOCES8"
     note: "VOCES8 — professional vocal ensemble"
 
-  - id: "PLACEHOLDER_CHANNEL_ID_tallis_scholars"
+  - id: "@TallisScholars"
     name: "The Tallis Scholars"
-    note: "The Tallis Scholars conducted by Peter Phillips — PLACEHOLDER: verify channel ID"
+    note: "The Tallis Scholars conducted by Peter Phillips"
 
-  - id: "PLACEHOLDER_CHANNEL_ID_trinity_cambridge"
+  - id: "@trinitycollegechoir"
     name: "Trinity College Cambridge"
-    note: "Choir of Trinity College, Cambridge — PLACEHOLDER: verify channel ID"
+    note: "Choir of Trinity College, Cambridge"
 
-  - id: "PLACEHOLDER_CHANNEL_ID_new_college_oxford"
+  - id: "@NewCollegeChoir"
     name: "Choir of New College Oxford"
-    note: "Choir of New College, Oxford — PLACEHOLDER: verify channel ID"
+    note: "Choir of New College, Oxford"
 
-  - id: "PLACEHOLDER_CHANNEL_ID_wells_cathedral"
-    name: "Wells Cathedral Choir"
-    note: "Wells Cathedral Choir — PLACEHOLDER: verify channel ID"
-
-  - id: "PLACEHOLDER_CHANNEL_ID_jesus_cambridge"
+  - id: "@JesusCollegeCambridge"
     name: "Choir of Jesus College Cambridge"
-    note: "Choir of Jesus College, Cambridge — PLACEHOLDER: verify channel ID"
+    note: "Choir of Jesus College, Cambridge"

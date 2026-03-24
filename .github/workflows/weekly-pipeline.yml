@@ -40,10 +40,11 @@ jobs:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          INPUT_MANUAL_URLS: ${{ github.event.inputs.manual_urls }}
         run: |
           ARGS=""
-          if [ -n "${{ github.event.inputs.manual_urls }}" ]; then
-            ARGS="--manual-urls ${{ github.event.inputs.manual_urls }}"
+          if [ -n "$INPUT_MANUAL_URLS" ]; then
+            ARGS="--manual-urls $INPUT_MANUAL_URLS"
           fi
           python -m pipeline.run $ARGS
 

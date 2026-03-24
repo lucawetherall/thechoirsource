@@ -12,10 +12,12 @@
 
 export default {
   async fetch(request, env) {
-    // CORS: allow any origin (dashboard could be on any GitHub Pages URL).
-    // For tighter security, restrict to the actual Pages URL once known.
+    // CORS: restrict to the configured dashboard origin if set, otherwise allow any.
+    // Set DASHBOARD_ORIGIN in Cloudflare Worker env vars to your GitHub Pages URL
+    // (e.g. "https://lucawetherall.github.io") once the dashboard is deployed.
+    const allowedOrigin = env.DASHBOARD_ORIGIN || '*';
     const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     };
